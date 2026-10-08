@@ -1,69 +1,14 @@
 === terminal bridge ===
-time: 2026-10-08T14:23:13+00:00
+time: 2026-10-08T14:56:34+00:00
 host: oneslash
 user: ivan
 
-=== command ===
-#!/usr/bin/env bash
-set -u
-echo "=== preflight ==="
-hostname
-id
-echo "--- nginx ---"
-command -v nginx || true
-sudo -n systemctl is-active nginx 2>/dev/null || true
-nginx -v 2>&1 || true
-echo "--- ports ---"
-sudo -n ss -lntp 2>/dev/null || ss -lnt
-echo "--- docker ---"
-docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
-echo "--- dns ---"
-getent hosts terminal.atlas-infra.ru || true
-echo "--- ufw ---"
-sudo -n ufw status 2>/dev/null || true
+=== operation ===
+docker_ps
 
 === output ===
-=== preflight ===
-oneslash
-uid=1001(ivan) gid=1001(ivan) groups=1001(ivan),27(sudo),100(users),988(docker)
---- nginx ---
-/usr/sbin/nginx
-active
-nginx version: nginx/1.24.0 (Ubuntu)
---- ports ---
-State  Recv-Q Send-Q Local Address:Port  Peer Address:PortProcess                                                       
-LISTEN 0      4096       127.0.0.1:31075      0.0.0.0:*    users:(("containerd",pid=2981520,fd=111))                    
-LISTEN 0      4096         0.0.0.0:22         0.0.0.0:*    users:(("sshd",pid=279423,fd=3),("systemd",pid=1,fd=175))    
-LISTEN 0      511          0.0.0.0:80         0.0.0.0:*    users:(("nginx",pid=2981433,fd=5),("nginx",pid=2981430,fd=5))
-LISTEN 0      8            0.0.0.0:179        0.0.0.0:*    users:(("bird",pid=554606,fd=7))                             
-LISTEN 0      4096       127.0.0.1:10249      0.0.0.0:*    users:(("kube-proxy",pid=547803,fd=14))                      
-LISTEN 0      4096       127.0.0.1:10248      0.0.0.0:*    users:(("kubelet",pid=547533,fd=22))                         
-LISTEN 0      4096       127.0.0.1:9099       0.0.0.0:*    users:(("calico-node",pid=554451,fd=8))                      
-LISTEN 0      4096         0.0.0.0:8080       0.0.0.0:*    users:(("docker-proxy",pid=2950279,fd=8))                    
-LISTEN 0      128        127.0.0.1:6010       0.0.0.0:*    users:(("sshd",pid=2896824,fd=8))                            
-LISTEN 0      4096            [::]:22            [::]:*    users:(("sshd",pid=279423,fd=4),("systemd",pid=1,fd=176))    
-LISTEN 0      4096               *:10256            *:*    users:(("kube-proxy",pid=547803,fd=11))                      
-LISTEN 0      4096               *:10250            *:*    users:(("kubelet",pid=547533,fd=18))                         
-LISTEN 0      511             [::]:80            [::]:*    users:(("nginx",pid=2981433,fd=6),("nginx",pid=2981430,fd=6))
-LISTEN 0      128            [::1]:6010          [::]:*    users:(("sshd",pid=2896824,fd=7))                            
-LISTEN 0      4096            [::]:8080          [::]:*    users:(("docker-proxy",pid=2950283,fd=8))                    
---- docker ---
-NAMES           STATUS                                  PORTS
-ai-chat         Up 36 minutes                           0.0.0.0:8080->8080/tcp, [::]:8080->8080/tcp
-private-proxy   Restarting (1) Less than a second ago   
---- dns ---
---- ufw ---
-Status: active
-
-To                         Action      From
---                         ------      ----
-22/tcp                     ALLOW       Anywhere                  
-179/tcp                    ALLOW       Anywhere                  
-3128/tcp                   ALLOW       Anywhere                  
-10250/tcp                  ALLOW       Anywhere                  
-179/tcp (v6)               ALLOW       Anywhere (v6)             
-3128/tcp (v6)              ALLOW       Anywhere (v6)             
-10250/tcp (v6)             ALLOW       Anywhere (v6)             
-
+NAMES           STATUS                          PORTS
+ai-chat         Up About an hour                0.0.0.0:8080->8080/tcp, [::]:8080->8080/tcp
+private-proxy   Restarting (1) 52 seconds ago   
 
 === exit code: 0 ===

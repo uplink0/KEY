@@ -1,79 +1,37 @@
 === terminal bridge ===
-time: 2026-10-08T14:14:08+00:00
+time: 2026-10-08T14:21:17+00:00
 host: oneslash
 user: ivan
 
 === command ===
 #!/usr/bin/env bash
 set -u
-echo "=== bridge diagnostics ==="
-date -Is
-echo "--- identity ---"
-id
-hostname
-echo "--- listening ports ---"
-sudo ss -lntp || ss -lntp
-echo "--- docker ---"
-docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
-echo "--- firewall ---"
-sudo ufw status 2>/dev/null || true
-echo "--- nginx ---"
-sudo systemctl is-active nginx 2>/dev/null || true
-echo "--- DNS ---"
-getent hosts terminal.atlas-infra.ru || true
-echo "--- HTTP local probes ---"
-curl -I --max-time 5 http://127.0.0.1/ 2>&1 || true
-curl -kI --max-time 5 https://127.0.0.1/ 2>&1 || true
+echo "=== web foundation ==="
+echo "host: $(hostname)"
+echo "--- nginx package ---"
+if command -v nginx >/dev/null 2>&1; then
+  echo "nginx already installed"
+else
+  echo "NGINX_NOT_INSTALLED"
+  echo "Run on oneslash manually:"
+  echo "sudo apt update && sudo apt install -y nginx"
+  echo "Then: sudo systemctl enable --now nginx"
+  exit 0
+fi
+echo "--- nginx status ---"
+sudo systemctl is-active nginx || true
+echo "--- nginx version ---"
+nginx -v 2>&1
+echo "--- port 80/443 ---"
+ss -lnt | grep -E ':(80|443) ' || true
 
 === output ===
-=== bridge diagnostics ===
-2026-10-08T14:14:08+00:00
---- identity ---
-uid=1001(ivan) gid=1001(ivan) groups=1001(ivan),27(sudo),100(users),988(docker)
-oneslash
---- listening ports ---
-State  Recv-Q Send-Q Local Address:Port  Peer Address:PortProcess                                                   
-LISTEN 0      4096       127.0.0.1:33177      0.0.0.0:*    users:(("containerd",pid=2717592,fd=116))                
-LISTEN 0      4096         0.0.0.0:22         0.0.0.0:*    users:(("sshd",pid=279423,fd=3),("systemd",pid=1,fd=148))
-LISTEN 0      8            0.0.0.0:179        0.0.0.0:*    users:(("bird",pid=554606,fd=7))                         
-LISTEN 0      4096       127.0.0.1:10249      0.0.0.0:*    users:(("kube-proxy",pid=547803,fd=14))                  
-LISTEN 0      4096       127.0.0.1:10248      0.0.0.0:*    users:(("kubelet",pid=547533,fd=22))                     
-LISTEN 0      4096       127.0.0.1:9099       0.0.0.0:*    users:(("calico-node",pid=554451,fd=8))                  
-LISTEN 0      4096         0.0.0.0:8080       0.0.0.0:*    users:(("docker-proxy",pid=2950279,fd=8))                
-LISTEN 0      128        127.0.0.1:6010       0.0.0.0:*    users:(("sshd",pid=2896824,fd=8))                        
-LISTEN 0      4096            [::]:22            [::]:*    users:(("sshd",pid=279423,fd=4),("systemd",pid=1,fd=149))
-LISTEN 0      4096               *:10256            *:*    users:(("kube-proxy",pid=547803,fd=11))                  
-LISTEN 0      4096               *:10250            *:*    users:(("kubelet",pid=547533,fd=18))                     
-LISTEN 0      128            [::1]:6010          [::]:*    users:(("sshd",pid=2896824,fd=7))                        
-LISTEN 0      4096            [::]:8080          [::]:*    users:(("docker-proxy",pid=2950283,fd=8))                
---- docker ---
-NAMES           STATUS                          PORTS
-ai-chat         Up 28 minutes                   0.0.0.0:8080->8080/tcp, [::]:8080->8080/tcp
-private-proxy   Restarting (1) 14 seconds ago   
---- firewall ---
-Status: active
-
-To                         Action      From
---                         ------      ----
-22/tcp                     ALLOW       Anywhere                  
-179/tcp                    ALLOW       Anywhere                  
-3128/tcp                   ALLOW       Anywhere                  
-10250/tcp                  ALLOW       Anywhere                  
-179/tcp (v6)               ALLOW       Anywhere (v6)             
-3128/tcp (v6)              ALLOW       Anywhere (v6)             
-10250/tcp (v6)             ALLOW       Anywhere (v6)             
-
---- nginx ---
-inactive
---- DNS ---
---- HTTP local probes ---
-  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-                                 Dload  Upload   Total   Spent    Left  Speed
-  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
-curl: (7) Failed to connect to 127.0.0.1 port 80 after 1 ms: Couldn't connect to server
-  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-                                 Dload  Upload   Total   Spent    Left  Speed
-  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
-curl: (7) Failed to connect to 127.0.0.1 port 443 after 0 ms: Couldn't connect to server
+=== web foundation ===
+host: oneslash
+--- nginx package ---
+NGINX_NOT_INSTALLED
+Run on oneslash manually:
+sudo apt update && sudo apt install -y nginx
+Then: sudo systemctl enable --now nginx
 
 === exit code: 0 ===

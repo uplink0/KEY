@@ -39,7 +39,7 @@ LLM_BASE_URL=https://api.openai.com/v1
 LLM_MODEL=gpt-4.1-mini
 ~~~
 
-Для другого OpenAI-compatible сервиса укажите его base URL и имя модели.
+Для другого OpenAI-compatible сервиса укажите его base URL и имя модели. Для локальной модели на самом сервере можно использовать, например, http://host.docker.internal:1234/v1.
 
 ## 3. Запустить
 

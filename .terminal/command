@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -e
+echo "bridge probe"
+uname -a
+id
+pwd
+docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'

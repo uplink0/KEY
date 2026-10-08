@@ -1,17 +1,1 @@
-#!/usr/bin/env bash
-set -u
-echo "=== preflight ==="
-hostname
-id
-echo "--- nginx ---"
-command -v nginx || true
-sudo -n systemctl is-active nginx 2>/dev/null || true
-nginx -v 2>&1 || true
-echo "--- ports ---"
-sudo -n ss -lntp 2>/dev/null || ss -lnt
-echo "--- docker ---"
-docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
-echo "--- dns ---"
-getent hosts terminal.atlas-infra.ru || true
-echo "--- ufw ---"
-sudo -n ufw status 2>/dev/null || true
+docker_ps

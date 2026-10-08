@@ -328,13 +328,15 @@ CMD ["python","/app/app.py"]
 EOF
                 docker rm -f oneslash-chat 2>/dev/null || true
                 docker build -t oneslash-chat:local /home/ivan/oneslash-chat
-                docker run -d --name oneslash-chat --restart unless-stopped -p 1080:8080 -v /home/ivan/oneslash-chat/data:/data oneslash-chat:local
-                curl -fsS http://127.0.0.1:1080/health
+                docker run -d --name oneslash-chat --restart unless-stopped -p 31001:8080 -v /home/ivan/oneslash-chat/data:/data oneslash-chat:local
+                curl -fsS http://127.0.0.1:31001/health
                 ;;
               web_chat_get_question)
                 set -e
                 if [ -f /home/ivan/oneslash-chat/data/question.json ]; then
-                  cat /home/ivan/oneslash-chat/data/question.json
+                  mkdir -p .chat
+                  cp /home/ivan/oneslash-chat/data/question.json .chat/question.json
+                  cat .chat/question.json
                 else
                   echo '{"status":"empty"}'
                 fi

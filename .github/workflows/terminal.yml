@@ -264,6 +264,71 @@ jobs:
                 df -ih
                 ;;
 
+              # Web chat deployment
+              deploy_web_chat)
+                set -e
+                mkdir -p /home/ivan/oneslash-chat
+                cat > /home/ivan/oneslash-chat/app.py <<'PY'
+import json
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+
+ROOT = Path('/data')
+MESSAGES = ROOT / 'messages.jsonl'
+ROOT.mkdir(parents=True, exist_ok=True)
+
+HTML = r'''<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Oneslash Chat</title>
+<style>body{font-family:system-ui,sans-serif;max-width:900px;margin:40px auto;padding:0 16px;background:#111;color:#eee}h1{font-size:24px}.box{background:#1b1b1b;border:1px solid #333;border-radius:12px;padding:16px}#messages{min-height:300px;max-height:60vh;overflow:auto;margin-bottom:12px}.m{padding:10px 12px;margin:8px 0;border-radius:10px;background:#252525}.me{background:#303b4a}.muted{color:#999;font-size:13px}form{display:flex;gap:8px}textarea{flex:1;resize:vertical;min-height:52px;background:#111;color:#eee;border:1px solid #444;border-radius:8px;padding:10px}button{background:#eee;color:#111;border:0;border-radius:8px;padding:0 18px;font-weight:600;cursor:pointer}</style></head>
+<body><h1>Oneslash Chat</h1><div class="box"><div id="messages"><div class="muted">Чат готов. Ответы от ChatGPT будут подключены через GitHub bridge.</div></div><form id="f"><textarea id="q" placeholder="Напиши сообщение..."></textarea><button>Отправить</button></form></div>
+<script>
+const box=document.querySelector('#messages'), q=document.querySelector('#q');
+function add(text,cls){const d=document.createElement('div');d.className='m '+(cls||'');d.textContent=text;box.appendChild(d);box.scrollTop=box.scrollHeight}
+document.querySelector('#f').onsubmit=async e=>{e.preventDefault();const text=q.value.trim();if(!text)return;add(text,'me');q.value='';try{const r=await fetch('/api/message',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({message:text})});const j=await r.json();add(j.status==='queued'?'Сообщение принято. Ожидание ответа…':'Ошибка: '+(j.error||'unknown'));}catch(err){add('Ошибка соединения: '+err)}};
+</script></body></html>'''
+
+class Handler(BaseHTTPRequestHandler):
+    def send_json(self, code, obj):
+        data=json.dumps(obj, ensure_ascii=False).encode()
+        self.send_response(code); self.send_header('Content-Type','application/json; charset=utf-8'); self.send_header('Content-Length',str(len(data))); self.end_headers(); self.wfile.write(data)
+    def do_GET(self):
+        if self.path == '/health': self.send_json(200, {'status':'ok','service':'oneslash-chat'}); return
+        if self.path == '/':
+            data=HTML.encode(); self.send_response(200); self.send_header('Content-Type','text/html; charset=utf-8'); self.send_header('Content-Length',str(len(data))); self.end_headers(); self.wfile.write(data); return
+        self.send_json(404, {'error':'not found'})
+    def do_POST(self):
+        if self.path != '/api/message': self.send_json(404, {'error':'not found'}); return
+        try:
+            n=int(self.headers.get('Content-Length','0')); body=json.loads(self.rfile.read(n)); msg=str(body.get('message','')).strip()
+            if not msg or len(msg)>10000: self.send_json(400, {'error':'message must be 1..10000 chars'}); return
+            with MESSAGES.open('a',encoding='utf-8') as f: f.write(json.dumps({'message':msg},ensure_ascii=False)+'\\n')
+            self.send_json(202, {'status':'queued'})
+        except Exception as e: self.send_json(400, {'error':str(e)})
+    def log_message(self, *args): pass
+
+ThreadingHTTPServer(('0.0.0.0',8080), Handler).serve_forever()
+PY
+                cat > /home/ivan/oneslash-chat/Dockerfile <<'EOF'
+FROM python:3.12-alpine
+WORKDIR /app
+COPY app.py /app/app.py
+RUN mkdir -p /data
+EXPOSE 8080
+CMD ["python","/app/app.py"]
+EOF
+                docker rm -f oneslash-chat 2>/dev/null || true
+                docker build -t oneslash-chat:local /home/ivan/oneslash-chat
+                docker run -d --name oneslash-chat --restart unless-stopped -p 1080:8080 -v /home/ivan/oneslash-chat/data:/data oneslash-chat:local
+                curl -fsS http://127.0.0.1:1080/health
+                ;;
+              web_chat_status)
+                docker ps --filter name=^/oneslash-chat$ --format 'table {{.Names}}\\t{{.Image}}\\t{{.Status}}\\t{{.Ports}}'
+                curl -fsS http://127.0.0.1:1080/health
+                ;;
+              web_chat_logs)
+                docker logs --tail 100 oneslash-chat
+                ;;
+
               *)
                 echo "ERROR: operation not allowed"
                 echo "Use one of the predefined operation names in .terminal/command."

@@ -1,0 +1,24 @@
+=== terminal bridge ===
+time: 2026-10-08T14:08:55+00:00
+host: oneslash
+user: ivan
+
+=== command ===
+#!/usr/bin/env bash
+set -e
+echo "bridge probe"
+uname -a
+id
+pwd
+docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
+
+=== output ===
+bridge probe
+Linux oneslash 6.8.0-142-generic #142-Ubuntu SMP PREEMPT_DYNAMIC Wed Sep  2 14:24:27 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
+uid=1001(ivan) gid=1001(ivan) groups=1001(ivan),27(sudo),100(users),988(docker)
+/home/ivan/actions-runner/_work/KEY/KEY
+NAMES           STATUS                          PORTS
+ai-chat         Up 21 minutes                   0.0.0.0:8080->8080/tcp, [::]:8080->8080/tcp
+private-proxy   Restarting (1) 50 seconds ago   
+
+=== exit code: 0 ===

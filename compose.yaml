@@ -1,0 +1,9 @@
+services:
+  ai-chat:
+    build: .
+    container_name: ai-chat
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"

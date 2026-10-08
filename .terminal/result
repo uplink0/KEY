@@ -1,14 +1,27 @@
 === terminal bridge ===
-time: 2026-10-08T14:56:34+00:00
+time: 2026-10-08T15:07:39+00:00
 host: oneslash
 user: ivan
 
 === operation ===
-docker_ps
+host_info
 
 === output ===
-NAMES           STATUS                          PORTS
-ai-chat         Up About an hour                0.0.0.0:8080->8080/tcp, [::]:8080->8080/tcp
-private-proxy   Restarting (1) 52 seconds ago   
+ Static hostname: oneslash
+       Icon name: computer-vm
+         Chassis: vm 🖴
+      Machine ID: e4584c4328b15cd591d7d5c553802e8a
+         Boot ID: 0e2e5fae3db445f1a179bb7871256fac
+  Virtualization: kvm
+Operating System: Ubuntu 24.04.4 LTS
+          Kernel: Linux 6.8.0-142-generic
+    Architecture: x86-64
+ Hardware Vendor: Red Hat
+  Hardware Model: KVM
+Firmware Version: 1.16.3-5.el9.alma.1
+   Firmware Date: Sun 2023-11-05
+    Firmware Age: 2y 11month 3d
+Linux oneslash 6.8.0-142-generic #142-Ubuntu SMP PREEMPT_DYNAMIC Wed Sep  2 14:24:27 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
+ 15:07:40 up 10 days,  2:09,  7 users,  load average: 0.09, 0.10, 0.17
 
 === exit code: 0 ===

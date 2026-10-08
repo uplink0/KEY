@@ -23,6 +23,7 @@ jobs:
         run: |
           set +e
           op="$(tr -d '\r\n' < .terminal/command)"
+
           {
             echo "=== terminal bridge ==="
             echo "time: $(date -Is)"
@@ -35,9 +36,14 @@ jobs:
             echo "=== output ==="
 
             case "$op" in
+              # Host / OS
               host_info)
                 hostnamectl 2>/dev/null || hostname
+                uname -a
                 uptime
+                ;;
+              os_release)
+                cat /etc/os-release
                 ;;
               memory)
                 free -h
@@ -45,18 +51,77 @@ jobs:
               disk)
                 df -hT
                 ;;
-              ports)
-                sudo -n ss -lntup 2>/dev/null || ss -lntup
+              disk_usage)
+                du -xhd1 / 2>/dev/null | sort -h
                 ;;
+              mounts)
+                findmnt
+                ;;
+              processes)
+                ps aux --sort=-%cpu | head -30
+                ;;
+              load)
+                cat /proc/loadavg
+                uptime
+                ;;
+
+              # Network
+              interfaces)
+                ip -br addr
+                ;;
+              routes)
+                ip route
+                ;;
+              neighbors)
+                ip neigh
+                ;;
+              ports)
+                ss -lntup
+                ;;
+              sockets)
+                ss -s
+                ;;
+              dns)
+                resolvectl status 2>/dev/null || cat /etc/resolv.conf
+                ;;
+              public_ip)
+                curl -4fsS --max-time 10 https://api.ipify.org
+                echo
+                ;;
+              ufw_status)
+                sudo -n ufw status verbose
+                ;;
+              ufw_numbered)
+                sudo -n ufw status numbered
+                ;;
+
+              # Docker
               docker_ps)
-                docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
+                docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}'
                 ;;
               docker_all)
-                docker ps -a --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
+                docker ps -a --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}'
                 ;;
               docker_images)
                 docker images
                 ;;
+              docker_volumes)
+                docker volume ls
+                ;;
+              docker_networks)
+                docker network ls
+                ;;
+              docker_disk)
+                docker system df
+                ;;
+              docker_info)
+                docker info
+                ;;
+              docker_events)
+                timeout 10 docker events --since 10s
+                ;;
+
+              # Kubernetes
               k8s_nodes)
                 kubectl get nodes -o wide
                 ;;
@@ -66,24 +131,142 @@ jobs:
               k8s_services)
                 kubectl get svc -A
                 ;;
+              k8s_deployments)
+                kubectl get deployments -A
+                ;;
+              k8s_statefulsets)
+                kubectl get statefulsets -A
+                ;;
+              k8s_daemonsets)
+                kubectl get daemonsets -A
+                ;;
+              k8s_ingresses)
+                kubectl get ingress -A
+                ;;
+              k8s_pv)
+                kubectl get pv
+                ;;
+              k8s_pvc)
+                kubectl get pvc -A
+                ;;
+              k8s_endpoints)
+                kubectl get endpoints -A
+                ;;
+              k8s_endpointslices)
+                kubectl get endpointslices -A
+                ;;
+              k8s_namespaces)
+                kubectl get namespaces
+                ;;
+              k8s_events)
+                kubectl get events -A --sort-by=.lastTimestamp
+                ;;
+              k8s_cluster_info)
+                kubectl cluster-info
+                ;;
+              k8s_version)
+                kubectl version
+                ;;
+              k8s_api_resources)
+                kubectl api-resources
+                ;;
+              k8s_context)
+                kubectl config current-context
+                ;;
+              k8s_crds)
+                kubectl get crd
+                ;;
+
+              # Systemd / services
+              systemd_failed)
+                systemctl --failed --no-pager
+                ;;
+              systemd_units)
+                systemctl list-units --type=service --state=running --no-pager
+                ;;
               nginx_status)
                 sudo -n systemctl status nginx --no-pager 2>&1
                 ;;
               nginx_config_test)
                 sudo -n nginx -t
                 ;;
-              ufw_status)
-                sudo -n ufw status verbose
+              nginx_listening)
+                ss -lntp | grep -E ':(80|443)\\b' || true
+                ;;
+              kubelet_status)
+                sudo -n systemctl status kubelet --no-pager 2>&1
+                ;;
+              containerd_status)
+                sudo -n systemctl status containerd --no-pager 2>&1
+                ;;
+              ssh_status)
+                sudo -n systemctl status ssh --no-pager 2>&1
                 ;;
               panel_status)
                 sudo -n systemctl status oneslash-panel --no-pager 2>&1
                 ;;
+
+              # Application / bridge
               panel_health)
                 curl -fsS http://127.0.0.1:8090/api/health
                 ;;
+              ai_chat_health)
+                curl -fsS http://127.0.0.1:8080/health
+                ;;
+              ai_chat_config)
+                curl -fsS http://127.0.0.1:8080/config
+                ;;
+              ai_chat_root)
+                curl -fsSI http://127.0.0.1:8080/
+                ;;
+              ai_chat_logs)
+                docker logs --tail 100 ai-chat
+                ;;
+              private_proxy_logs)
+                docker logs --tail 100 private-proxy
+                ;;
+              private_proxy_status)
+                docker inspect --format '{{.Status}}' private-proxy 2>&1
+                ;;
+
+              # Kubernetes / CNI diagnostics
+              calico_pods)
+                kubectl get pods -A -o wide | grep -i calico || true
+                ;;
+              kube_system)
+                kubectl get pods -n kube-system -o wide
+                ;;
+              kube_system_services)
+                kubectl get svc -n kube-system
+                ;;
+
+              # Filesystem / security diagnostics
+              whoami)
+                id
+                groups
+                ;;
+              environment)
+                env | sort
+                ;;
+              time)
+                date -Is
+                ;;
+              kernel)
+                uname -a
+                ;;
+              sudo_check)
+                sudo -n -l 2>&1
+                ;;
+              cron)
+                crontab -l 2>&1
+                ;;
+              disk_inodes)
+                df -ih
+                ;;
+
               *)
                 echo "ERROR: operation not allowed"
-                echo "Allowed: host_info memory disk ports docker_ps docker_all docker_images k8s_nodes k8s_pods k8s_services nginx_status nginx_config_test ufw_status panel_status panel_health"
+                echo "Use one of the predefined operation names in .terminal/command."
                 exit 2
                 ;;
             esac

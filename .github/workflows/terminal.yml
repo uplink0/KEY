@@ -18,21 +18,76 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Execute command
+      - name: Execute allowed operation
         shell: bash
         run: |
           set +e
+          op="$(tr -d '\r\n' < .terminal/command)"
           {
             echo "=== terminal bridge ==="
             echo "time: $(date -Is)"
             echo "host: $(hostname)"
             echo "user: $(whoami)"
             echo
-            echo "=== command ==="
-            cat .terminal/command
+            echo "=== operation ==="
+            printf '%s\n' "$op"
             echo
             echo "=== output ==="
-            bash .terminal/command
+
+            case "$op" in
+              host_info)
+                hostnamectl 2>/dev/null || hostname
+                uptime
+                ;;
+              memory)
+                free -h
+                ;;
+              disk)
+                df -hT
+                ;;
+              ports)
+                sudo -n ss -lntup 2>/dev/null || ss -lntup
+                ;;
+              docker_ps)
+                docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
+                ;;
+              docker_all)
+                docker ps -a --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
+                ;;
+              docker_images)
+                docker images
+                ;;
+              k8s_nodes)
+                kubectl get nodes -o wide
+                ;;
+              k8s_pods)
+                kubectl get pods -A -o wide
+                ;;
+              k8s_services)
+                kubectl get svc -A
+                ;;
+              nginx_status)
+                sudo -n systemctl status nginx --no-pager 2>&1
+                ;;
+              nginx_config_test)
+                sudo -n nginx -t
+                ;;
+              ufw_status)
+                sudo -n ufw status verbose
+                ;;
+              panel_status)
+                sudo -n systemctl status oneslash-panel --no-pager 2>&1
+                ;;
+              panel_health)
+                curl -fsS http://127.0.0.1:8090/api/health
+                ;;
+              *)
+                echo "ERROR: operation not allowed"
+                echo "Allowed: host_info memory disk ports docker_ps docker_all docker_images k8s_nodes k8s_pods k8s_services nginx_status nginx_config_test ufw_status panel_status panel_health"
+                exit 2
+                ;;
+            esac
+
             rc=$?
             echo
             echo "=== exit code: $rc ==="
@@ -45,5 +100,5 @@ jobs:
           git config user.email "terminal-bridge@users.noreply.github.com"
           git add .terminal/result
           git diff --cached --quiet && exit 0
-          git commit -m "terminal: publish command result [skip ci]"
+          git commit -m "terminal: publish operation result [skip ci]"
           git push

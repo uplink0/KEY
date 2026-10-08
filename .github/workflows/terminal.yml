@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   terminal:
-    runs-on: [self-hosted, linux]
+    runs-on: self-hosted
     timeout-minutes: 10
 
     steps:

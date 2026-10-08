@@ -1,0 +1,49 @@
+name: terminal-bridge
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".terminal/command"
+
+permissions:
+  contents: write
+
+jobs:
+  terminal:
+    runs-on: [self-hosted, linux]
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Execute command
+        shell: bash
+        run: |
+          set +e
+          {
+            echo "=== terminal bridge ==="
+            echo "time: $(date -Is)"
+            echo "host: $(hostname)"
+            echo "user: $(whoami)"
+            echo
+            echo "=== command ==="
+            cat .terminal/command
+            echo
+            echo "=== output ==="
+            bash .terminal/command
+            rc=$?
+            echo
+            echo "=== exit code: $rc ==="
+          } > .terminal/result 2>&1
+
+      - name: Publish result
+        shell: bash
+        run: |
+          git config user.name "terminal-bridge"
+          git config user.email "terminal-bridge@users.noreply.github.com"
+          git add .terminal/result
+          git diff --cached --quiet && exit 0
+          git commit -m "terminal: publish command result [skip ci]"
+          git push

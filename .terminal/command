@@ -1,20 +1,20 @@
 #!/usr/bin/env bash
 set -u
-echo "=== bridge diagnostics ==="
-date -Is
-echo "--- identity ---"
-id
-hostname
-echo "--- listening ports ---"
-sudo ss -lntp || ss -lntp
-echo "--- docker ---"
-docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
-echo "--- firewall ---"
-sudo ufw status 2>/dev/null || true
-echo "--- nginx ---"
-sudo systemctl is-active nginx 2>/dev/null || true
-echo "--- DNS ---"
-getent hosts terminal.atlas-infra.ru || true
-echo "--- HTTP local probes ---"
-curl -I --max-time 5 http://127.0.0.1/ 2>&1 || true
-curl -kI --max-time 5 https://127.0.0.1/ 2>&1 || true
+echo "=== web foundation ==="
+echo "host: $(hostname)"
+echo "--- nginx package ---"
+if command -v nginx >/dev/null 2>&1; then
+  echo "nginx already installed"
+else
+  echo "NGINX_NOT_INSTALLED"
+  echo "Run on oneslash manually:"
+  echo "sudo apt update && sudo apt install -y nginx"
+  echo "Then: sudo systemctl enable --now nginx"
+  exit 0
+fi
+echo "--- nginx status ---"
+sudo systemctl is-active nginx || true
+echo "--- nginx version ---"
+nginx -v 2>&1
+echo "--- port 80/443 ---"
+ss -lnt | grep -E ':(80|443) ' || true
